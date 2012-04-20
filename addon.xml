@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.waldo" version="0.0.1" name="Waldo" provider-name="Bstrdsmkr">
+    <requires>
+        <import addon="xbmc.python" version="2.0"/>
+        <import addon="script.module.t0mm0.common" version="1.1.0"/>
+		<import addon="script.module.metahandler" version="1.0.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Browse various content indexes and use them to search various sources of content</summary>
+        <description>Waldo allows you to browse various content indexes (such as imdb.com) and search all supported sources (such as your local library and other addons) for that content, all at once.</description>
+        <platform>all</platform>
+    </extension>
+</addon>
