@@ -35,7 +35,7 @@ def has_requirements(list):
             return False
     return True
 
-def _update_settings_xml(list):
+def update_settings_xml(list):
     '''
     This function writes a new ``resources/settings.xml`` file which contains
     all settings for this addon and its plugins.
@@ -53,10 +53,10 @@ def _update_settings_xml(list):
             f.write('<settings>\n')    
             for mod in list:
                 settings_xml = mod.get_settings_xml()
-                if settings_xml:
-                    f.write('<category label="%s">\n' % mod.display_name)
-                    f.write(settings_xml)
-                    f.write('</category>\n')
+                f.write('<category label="%s">\n' % mod.display_name)
+                f.write('<setting id="enabled" type="bool" default="true"/>')
+                if settings_xml: f.write(settings_xml)
+                f.write('</category>\n')
             f.write('</settings>')
         finally:
             f.close

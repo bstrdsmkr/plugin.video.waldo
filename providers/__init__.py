@@ -37,4 +37,4 @@ for node in os.listdir(addons_dir):
                     addon.log_debug('Waldo: Requirements not met for %s' %mod.display_name)
                     del mod
             del module
-_update_settings_xml(provider_list)
+update_settings_xml(provider_list)

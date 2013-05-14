@@ -4,7 +4,7 @@ import sys
 import xbmc
 
 from utils import *
-from utils import _update_settings_xml
+# from utils import _update_settings_xml
 from t0mm0.common.addon import Addon
 addon = Addon('plugin.video.waldo', sys.argv)
 index_list = []
@@ -40,4 +40,4 @@ for node in os.listdir(addons_dir):
                     del mod
             del module
 
-_update_settings_xml(index_list)
+update_settings_xml(index_list)

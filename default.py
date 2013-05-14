@@ -1,16 +1,18 @@
+import sys
+sys.modules['xbmcplugin'] = __import__('magic_xbmcplugin')
+import os
+import imp
+import json
+import urllib
 import xbmc
+import urlparse
 import xbmcgui
 import xbmcplugin
-import sys
-import imp
-import os
 
 from t0mm0.common.addon import Addon
 from t0mm0.common.net import Net
 from metahandler import metahandlers
 from metahandler import metacontainers
-try:    import cPickle as pickle
-except: import pickle
 
 from utils import *
 
@@ -22,67 +24,71 @@ def listIndexes():
     import indexes
     for index in indexes.index_list:
         title = index.display_name
-        args = {'mode':'ListIndexBrowsingOptions'}
-        args['index'] = get_index_name(index)
-        args['ind_path'] = os.path.dirname(index.__file__)
-        print 'ind_path is %s' %args['ind_path']
+        args = {'waldo_mode':'ListIndexBrowsingOptions'}
+        args['waldo_mod'] = get_index_name(index)
+        args['waldo_path'] = os.path.dirname(index.__file__)
         addon.add_directory(args,   {'title':  title})
     addon.end_of_directory()
 
 def ListIndexBrowsingOptions(index, ind_path):
-    print 'ind_path is %s' %ind_path
     index = import_module(index, fromlist=[INDEXES_PATH, ind_path])
     options = index.get_browsing_options()
     for option in options:
-        callback = pickle.dumps(option['function'])
-        args = pickle.dumps(option['kwargs'])
-        addon.add_directory({'mode':'ActivateCallback', 'function':callback, 'kwargs':args, 'index':get_index_name(index), 'ind_path':ind_path},   {'title':option['name']})
+        waldo_path, waldo_file = os.path.split(index.__file__)
+        queries = {'waldo_mode':'ActivateCallback'}
+        queries['waldo_mod'] = waldo_file.rsplit('.',1)[0]
+        queries['waldo_path'] = waldo_path
+        queries['function'] = option['function']
+        queries['kwargs'] = option['kwargs']
+        addon.add_directory(queries, {'title':option['name']})
     addon.end_of_directory()
 
-def GetAllResults(type,title,year,imdb,tvdb,season,episode):
+def ActivateCallback(func, kwargs, mod, mod_path):
+    mod = import_module(mod, fromlist=[INDEXES_PATH, mod_path])
+    callback = getattr(mod, func)
+    kwargs = json.loads(kwargs)
+    if kwargs: 
+        print type(kwargs)
+        callback(**kwargs)
+    else: callback(addon.queries)
+
+def GetAllResults(vid_type,title,year,imdb,tvdb,season,episode):
     import providers
-    all_results = []
     for provider in providers.provider_list:
-        results = provider.get_results(type,title,year,imdb,tvdb,season,episode)
-        all_results.extend(results)
-    for result in all_results:
-        callback = pickle.dumps(result['function'])
-        args = pickle.dumps(result['kwargs'])
-        label = '[%s] %s' %(result['tag'],result['title'])
-        addon.add_directory({'mode':'ActivateCallback', 'function':callback, 'kwargs':args},   {'title':label})
-    addon.end_of_directory()
+        results = provider.get_results(vid_type,title,year,imdb,tvdb,season,episode)
+        for result in results:
+            label = '[%s] %s' %(result['tag'], result['info_labels']['title'])
+            listitem = xbmcgui.ListItem(label, iconImage='', 
+                    thumbnailImage='')
+            listitem.setProperty('IsPlayable', 'true')
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), result['li_url'] , listitem,
+                                        isFolder=False)
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-def ActivateCallback(function, kwargs, index, ind_path):
-    if index:
-        index = import_module(index, fromlist=[INDEXES_PATH, ind_path])
-    callback = pickle.loads(function)
-    kwargs = pickle.loads(kwargs)
-    callback(**kwargs)
-
-mode     = addon.queries.get('mode',    '')
-index    = addon.queries.get('index',   '')
-ind_path    = addon.queries.get('ind_path',   '')
+waldo_mode     = addon.queries.get('waldo_mode',    '')
+waldo_mod    = addon.queries.get('waldo_mod',   '')
+waldo_path    = addon.queries.get('waldo_path',   '')
 name     = addon.queries.get('name',    '')
-type     = addon.queries.get('type',    '')
+vid_type     = addon.queries.get('vid_type',    '')
 title    = addon.queries.get('title',   '')
 year     = addon.queries.get('year',    '')
 imdb     = addon.queries.get('imdb',    '')
 tvdb     = addon.queries.get('tvdb',    '')
 season   = addon.queries.get('season',  '')
 episode  = addon.queries.get('episode', '')
-function = addon.queries.get('function','')
-kwargs   = addon.queries.get('kwargs',  '')
+function = addon.queries.get('function', 'callback')
+kwargs   = addon.queries.get('kwargs',  '{}')
 receiver = addon.queries.get('receiver','')
 
 addon.log(addon.queries)
-if mode=='main':
+if not 'waldo_mode' in addon.queries:
     listIndexes()
-elif mode=='ListIndexBrowsingOptions':
-    ListIndexBrowsingOptions(index, ind_path)
-elif mode=='GetAllResults':
-    GetAllResults(type,title,year,imdb,tvdb,season,episode)
-elif mode=='ActivateCallback':
-    ActivateCallback(function,kwargs, index, ind_path)
-elif mode=='CallModule':
-    receiver = import_module(receiver, fromlist=[INDEXES_PATH,PROVIDERS_PATH, ind_path])
+elif waldo_mode=='ListIndexBrowsingOptions':
+    ListIndexBrowsingOptions(waldo_mod, waldo_path)
+elif waldo_mode=='GetAllResults':
+    GetAllResults(vid_type,title,year,imdb,tvdb,season,episode)
+elif waldo_mode=='ActivateCallback':
+    ActivateCallback(function,kwargs, waldo_mod, waldo_path)
+elif waldo_mode=='CallModule':
+    receiver = import_module(receiver, fromlist=[INDEXES_PATH,PROVIDERS_PATH, waldo_path])
     receiver.callback(addon.queries)
