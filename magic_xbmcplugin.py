@@ -2,7 +2,6 @@ import os
 import inspect
 import xbmcplugin as mundane_xbmcplugin
 
-from urlparse import urlparse
 
 SORT_METHOD_NONE = 0
 SORT_METHOD_LABEL = 1
@@ -61,13 +60,12 @@ def addDirectoryItem(*args, **kwargs):
         caller_path = inspect.stack()[3][1]
     caller_path, caller_name = os.path.split(caller_path)
     caller = caller_name.rsplit('.')[0]
-    
-    parsed = urlparse(args[1])
-    if parsed.query:
-        if not 'waldo_mod=' in parsed.query:
+
+    if args[1].startswith('plugin://'):
+        if not 'waldo_mod=' in args[1]:
             args = list(args)
             args[1] = '%s&waldo_mod=%s&waldo_path=%s' %(args[1], caller, caller_path)
-        if not 'waldo_mode=' in parsed.query:
+        if not 'waldo_mode=' in args[1]:
             args[1] = '%s&waldo_mode=%s' %(args[1], 'ActivateCallback')
     return mundane_xbmcplugin.addDirectoryItem(*args, **kwargs)
 
