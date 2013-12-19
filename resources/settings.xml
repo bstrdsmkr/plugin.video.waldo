@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+<category label="Example Index">
+<setting id="enabled" type="bool" default="true"/></category>
+<category label="Rotten Tomatoes">
+<setting id="enabled" type="bool" default="true"/><setting id="Rtn_api_key" type="text" label="API Key" default=""/>\n</category>
+<category label="PrimeWire">
+<setting id="enabled" type="bool" default="true"/></category>
+</settings>

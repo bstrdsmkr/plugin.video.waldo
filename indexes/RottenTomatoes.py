@@ -1,8 +1,9 @@
 import sys
 import json
+import gzip
 import urllib2
 import xbmcplugin
-
+from StringIO import StringIO
 
 from t0mm0.common.addon import Addon
 addon = Addon('plugin.video.waldo', sys.argv)
@@ -38,7 +39,9 @@ def get_settings_xml():
         A string containing XML which would be valid in 
         ``resources/settings.xml`` or boolean False if none are required
     '''
-    return False
+    xml =  '<setting id="Rtn_api_key" '
+    xml += 'type="text" label="API Key" default=""/>\\n'
+    return xml 
 
 def get_browsing_options():#MUST be defined
     '''
@@ -68,7 +71,8 @@ def get_browsing_options():#MUST be defined
     if not api_key: return []
     url = 'http://api.rottentomatoes.com/api/public/v1.0/lists.json?apikey=%s'
     url = url % api_key
-    response = json.loads(GetURL(url))
+    page = GetURL(url)
+    response = json.loads(page)
 
     option_1 = {}
     option_1['name'] = 'Movies'
@@ -124,7 +128,10 @@ def list_content(url):
         li_params = {'waldo_mode':'GetAllResults', 'vid_type':'movie'}
         li_params['title'] = movie['title']
         li_params['year'] = movie['year']
-        li_params['imdb'] = movie['alternate_ids']['imdb']
+        if 'alternate_ids' in movie:
+            li_params['imdb'] = movie['alternate_ids']['imdb']
+        else:
+            li_params['imdb'] = ''
         
         info_labels = {'title':title, 'year':movie['year']}
         addon.add_directory(li_params, info_labels, img=movie['posters']['detailed'])
@@ -133,6 +140,10 @@ def list_content(url):
 
 def GetURL(url):
     addon.log('Fetching URL: %s' % url)
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req, timeout=10)
+    request = urllib2.Request(url)
+    response = urllib2.urlopen(request)
+    if response.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO(response.read())
+        f = gzip.GzipFile(fileobj=buf)
+        return f.read()
     return response.read()
